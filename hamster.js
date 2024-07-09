@@ -51,7 +51,7 @@ export class Hamster {
 
 		let out = "";
 		out += `name: ${this.TGUser.firstName}\n`;
-		out += `coins: ${parseInt(this.user.balanceCoins)}\n`;
+		out += `coins: ${parseInt(this.user.balanceCoins)}/${parseInt(this.game.upgrades.reduce((p, v) => p + v.price, 0) / this.game.upgrades.length)}\n`;
 		out += `EPH: ${this.user.earnPassivePerHour}\n`;
 		out += `EPS: ${this.user.earnPassivePerSec}\n`;
 		out += `taps: ${this.user.availableTaps}/${this.user.maxTaps} - ${this.user.tapsRecoverPerSec}TPS+\n`;
