@@ -86,11 +86,13 @@ export class Hamster {
 		await this.post("./tap", data);
 
 		//CARDS
-		let cardToBuy = this.GetCardToBuy();
-		while (cardToBuy) {
-			console.log(`${this.TGUser.firstName}: buying card ${cardToBuy.name}`);
-			await this.post("./buy-upgrade", { timestamp: Math.floor(Date.now() / 1000), upgradeId: cardToBuy.id });
-			cardToBuy = this.GetCardToBuy();
+		if (this.user.balanceCoins > this.game.upgrades.reduce((p, v) => p + v.price, 0) / this.game.upgrades.length) {
+			let cardToBuy = this.GetCardToBuy();
+			while (cardToBuy) {
+				console.log(`${this.TGUser.firstName}: buying card ${cardToBuy.name}`);
+				await this.post("./buy-upgrade", { timestamp: Math.floor(Date.now() / 1000), upgradeId: cardToBuy.id });
+				cardToBuy = this.GetCardToBuy();
+			}
 		}
 
 		out = "";
