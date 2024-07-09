@@ -98,7 +98,7 @@ export class Hamster {
 
 		await this.update();
 
-		const sleepTime = parseInt((this.user.maxTaps - this.user.availableTaps) / this.user.tapsRecoverPerSec);
+		const sleepTime = parseInt((this.user.maxTaps - this.user.availableTaps) / this.user.tapsRecoverPerSec / 4);
 		console.log(`waiting for ${sleepTime} seconds`);
 		await sleep(sleepTime * 1000);
 		this.tick();
