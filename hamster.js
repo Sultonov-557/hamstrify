@@ -10,6 +10,9 @@ export class Hamster {
 			const req = await this.axios.post(url, data);
 			data = req.data;
 
+			if (data.telegramUser) {
+				this.TGUser = data.telegramUser;
+			}
 			if (data.clickerUser) {
 				this.user = data.clickerUser;
 			}
@@ -44,6 +47,7 @@ export class Hamster {
 		await this.post("./config");
 		await this.post("./upgrades-for-buy");
 		await this.post("./list-tasks");
+		await this.post("../auth/me-telegram");
 	}
 
 	GetCardToBuy() {
@@ -55,9 +59,8 @@ export class Hamster {
 	async tick() {
 		//UPDATE
 		await this.update();
-
 		let out = "";
-		out += `ID: ${this.user.id}\n`;
+		out += `NAME: ${this.TGUser.firstName}\n`;
 		out += `coins: ${this.user.balanceCoins}\n`;
 		out += `EPH: ${this.user.earnPassivePerHour}\n`;
 		out += `EPS: ${this.user.earnPassivePerSec}\n`;
@@ -67,7 +70,7 @@ export class Hamster {
 
 		//CLAIM DAILY CIPHER
 		if (!this.game.dailyCipher.isClaimed) {
-			console.log("claiming cipher");
+			console.log(`${this.TGUser.firstName}: claiming cipher for`);
 			const cipher = Buffer.from(`${this.game.dailyCipher.cipher.slice(0, 3)}${this.game.dailyCipher.cipher.slice(4)}`, "base64").toString();
 			try {
 				await this.post("./claim-daily-cipher", { cipher });
@@ -85,10 +88,19 @@ export class Hamster {
 		//CARDS
 		let cardToBuy = this.GetCardToBuy();
 		while (cardToBuy) {
-			console.log(`buying card ${cardToBuy.name}`);
+			console.log(`${this.TGUser.firstName}: buying card ${cardToBuy.name}`);
 			await this.post("./buy-upgrade", { timestamp: Math.floor(Date.now() / 1000), upgradeId: cardToBuy.id });
 			cardToBuy = this.GetCardToBuy();
 		}
+
+		out = "";
+		out += `NAME: ${this.TGUser.firstName}\n`;
+		out += `coins: ${this.user.balanceCoins}\n`;
+		out += `EPH: ${this.user.earnPassivePerHour}\n`;
+		out += `EPS: ${this.user.earnPassivePerSec}\n`;
+		out += `taps: ${this.user.availableTaps}/${this.user.maxTaps} - ${this.user.tapsRecoverPerSec}TPS+\n`;
+		out += "-".repeat(10);
+		console.log(out);
 
 		const sleepTime = parseInt((this.user.maxTaps - this.user.availableTaps) / this.user.tapsRecoverPerSec);
 		console.log(`waiting for ${sleepTime} seconds`);
