@@ -48,6 +48,15 @@ export class Hamster {
 		await this.post("./upgrades-for-buy");
 		await this.post("./list-tasks");
 		await this.post("../auth/me-telegram");
+
+		let out = "";
+		out += `name: ${this.TGUser.firstName}\n`;
+		out += `coins: ${parseInt(this.user.balanceCoins)}\n`;
+		out += `EPH: ${this.user.earnPassivePerHour}\n`;
+		out += `EPS: ${this.user.earnPassivePerSec}\n`;
+		out += `taps: ${this.user.availableTaps}/${this.user.maxTaps} - ${this.user.tapsRecoverPerSec}TPS+\n`;
+		out += "-".repeat(10);
+		console.log(out);
 	}
 
 	GetCardToBuy() {
@@ -59,14 +68,6 @@ export class Hamster {
 	async tick() {
 		//UPDATE
 		await this.update();
-		let out = "";
-		out += `NAME: ${this.TGUser.firstName}\n`;
-		out += `coins: ${parseInt(this.user.balanceCoins)}\n`;
-		out += `EPH: ${this.user.earnPassivePerHour}\n`;
-		out += `EPS: ${this.user.earnPassivePerSec}\n`;
-		out += `taps: ${this.user.availableTaps}/${this.user.maxTaps} - ${this.user.tapsRecoverPerSec}TPS+\n`;
-		out += "-".repeat(10);
-		console.log(out);
 
 		//CLAIM DAILY CIPHER
 		if (!this.game.dailyCipher.isClaimed) {
@@ -95,14 +96,7 @@ export class Hamster {
 			}
 		}
 
-		out = "";
-		out += `NAME: ${this.TGUser.firstName}\n`;
-		out += `coins: ${parseInt(this.user.balanceCoins)}\n`;
-		out += `EPH: ${this.user.earnPassivePerHour}\n`;
-		out += `EPS: ${this.user.earnPassivePerSec}\n`;
-		out += `taps: ${this.user.availableTaps}/${this.user.maxTaps} - ${this.user.tapsRecoverPerSec}TPS+\n`;
-		out += "-".repeat(10);
-		console.log(out);
+		await this.update();
 
 		const sleepTime = parseInt((this.user.maxTaps - this.user.availableTaps) / this.user.tapsRecoverPerSec);
 		console.log(`waiting for ${sleepTime} seconds`);
