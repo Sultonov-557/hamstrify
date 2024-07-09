@@ -61,7 +61,7 @@ export class Hamster {
 		await this.update();
 		let out = "";
 		out += `NAME: ${this.TGUser.firstName}\n`;
-		out += `coins: ${this.user.balanceCoins}\n`;
+		out += `coins: ${parseInt(this.user.balanceCoins)}\n`;
 		out += `EPH: ${this.user.earnPassivePerHour}\n`;
 		out += `EPS: ${this.user.earnPassivePerSec}\n`;
 		out += `taps: ${this.user.availableTaps}/${this.user.maxTaps} - ${this.user.tapsRecoverPerSec}TPS+\n`;
@@ -95,7 +95,7 @@ export class Hamster {
 
 		out = "";
 		out += `NAME: ${this.TGUser.firstName}\n`;
-		out += `coins: ${this.user.balanceCoins}\n`;
+		out += `coins: ${parseInt(this.user.balanceCoins)}\n`;
 		out += `EPH: ${this.user.earnPassivePerHour}\n`;
 		out += `EPS: ${this.user.earnPassivePerSec}\n`;
 		out += `taps: ${this.user.availableTaps}/${this.user.maxTaps} - ${this.user.tapsRecoverPerSec}TPS+\n`;
