@@ -35,7 +35,7 @@ export class Hamster {
 				this.game.upgrades = data.upgradesForBuy;
 			}
 		} catch (e) {
-			console.log(e, url);
+			console.log(e.data?.error_message || e.code || e, url);
 		}
 	}
 
@@ -49,7 +49,7 @@ export class Hamster {
 
 	GetCardToBuy() {
 		return this.game.upgrades
-			.filter((v) => !v.condition && v.price < this.user.balanceCoins && v.profitPerHour != 0 && !v.isExpired)
+			.filter((v) => !v.condition && v.price < this.user.balanceCoins && v.profitPerHourDelta != 0 && !v.isExpired && !v.cooldownSeconds)
 			.sort((a, b) => a.price / a.profitPerHourDelta - b.price / b.profitPerHourDelta)[0];
 	}
 
@@ -76,11 +76,9 @@ export class Hamster {
 		await this.post("./tap", data);
 
 		//CARDS
-		//153.3
 		let cardToBuy = this.GetCardToBuy();
-		while (cardToBuy.length != 0) {
+		while (cardToBuy) {
 			console.log(`buying card ${cardToBuy.name}`);
-			if (cardToBuy.cooldownSeconds) await sleep(cardToBuy.cooldownSeconds * 1000);
 			await this.post("./buy-upgrade", { timestamp: Math.floor(Date.now() / 1000), upgradeId: cardToBuy.id });
 			cardToBuy = this.GetCardToBuy();
 		}
@@ -93,13 +91,11 @@ export class Hamster {
 		out += `taps: ${this.user.availableTaps}/${this.user.maxTaps} - ${this.user.tapsRecoverPerSec}TPS+\n`;
 		out += "-".repeat(10);
 		console.log(out);
-	}
 
-	async loop() {
-		while (true) {
-			await this.tick();
-			await sleep(1000 * 60 * 5);
-		}
+		const sleepTime = ((this.user.maxTaps - this.user.availableTaps) / this.user.tapsRecoverPerSec) * 1000;
+		console.log(`waiting for ${sleepTime}`);
+		await sleep(sleepTime);
+		this.tick();
 	}
 
 	constructor(TOKEN) {
