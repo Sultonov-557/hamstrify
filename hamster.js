@@ -79,8 +79,8 @@ export class Hamster {
 		//153.3
 		let cardToBuy = this.GetCardToBuy();
 		while (cardToBuy.length != 0) {
-			if (cardToBuy.cooldownSeconds) await sleep(cardToBuy.cooldownSeconds * 1000);
 			console.log(`buying card ${cardToBuy.name}`);
+			if (cardToBuy.cooldownSeconds) await sleep(cardToBuy.cooldownSeconds * 1000);
 			await this.post("./buy-upgrade", { timestamp: Math.floor(Date.now() / 1000), upgradeId: cardToBuy.id });
 			cardToBuy = this.GetCardToBuy();
 		}
