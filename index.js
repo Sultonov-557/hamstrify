@@ -58,8 +58,12 @@ const clients = {};
 			if (url.includes("https://api.hamsterkombat.io")) {
 				try {
 					const data = await event.json();
+					console.log(url);
 					if (url.includes("sync")) {
 						clients[user.name].user = data.clickerUser;
+					}
+					if (url.includes("config")) {
+						clients[user.name].game = data;
 					}
 				} catch {}
 			}
@@ -74,3 +78,5 @@ function start() {
 		console.log(client);
 	}
 }
+
+function tick() {}
