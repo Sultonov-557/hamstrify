@@ -40,7 +40,6 @@ export class Hamster {
 	}
 
 	async update() {
-		console.log("updating");
 		await this.post("./sync");
 		await this.post("./config");
 		await this.post("./upgrades-for-buy");
@@ -57,6 +56,15 @@ export class Hamster {
 		//UPDATE
 		await this.update();
 
+		let out = "";
+		out += `ID: ${this.user.id}\n`;
+		out += `coins: ${this.user.balanceCoins}\n`;
+		out += `EPH: ${this.user.earnPassivePerHour}\n`;
+		out += `EPS: ${this.user.earnPassivePerSec}\n`;
+		out += `taps: ${this.user.availableTaps}/${this.user.maxTaps} - ${this.user.tapsRecoverPerSec}TPS+\n`;
+		out += "-".repeat(10);
+		console.log(out);
+
 		//CLAIM DAILY CIPHER
 		if (!this.game.dailyCipher.isClaimed) {
 			console.log("claiming cipher");
@@ -72,7 +80,6 @@ export class Hamster {
 			availableTaps: 0,
 			timestamp: Math.floor(Date.now() / 1000),
 		};
-		console.log(`clicking ${data.count} times`);
 		await this.post("./tap", data);
 
 		//CARDS
@@ -83,18 +90,9 @@ export class Hamster {
 			cardToBuy = this.GetCardToBuy();
 		}
 
-		let out = "";
-		out += `ID: ${this.user.id}\n`;
-		out += `coins: ${this.user.balanceCoins}\n`;
-		out += `EPH: ${this.user.earnPassivePerHour}\n`;
-		out += `EPS: ${this.user.earnPassivePerSec}\n`;
-		out += `taps: ${this.user.availableTaps}/${this.user.maxTaps} - ${this.user.tapsRecoverPerSec}TPS+\n`;
-		out += "-".repeat(10);
-		console.log(out);
-
-		const sleepTime = ((this.user.maxTaps - this.user.availableTaps) / this.user.tapsRecoverPerSec) * 1000;
-		console.log(`waiting for ${sleepTime}`);
-		await sleep(sleepTime);
+		const sleepTime = parseInt((this.user.maxTaps - this.user.availableTaps) / this.user.tapsRecoverPerSec);
+		console.log(`waiting for ${sleepTime} seconds`);
+		await sleep(sleepTime * 1000);
 		this.tick();
 	}
 
@@ -103,7 +101,7 @@ export class Hamster {
 			baseURL: "https://api.hamsterkombat.io/clicker",
 			headers: { Authorization: TOKEN },
 		});
-		this.loop();
+		this.tick();
 	}
 }
 
