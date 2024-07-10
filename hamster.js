@@ -85,7 +85,11 @@ export class Hamster {
 		//check-task endpoint
 		for (let task of this.game.tasks) {
 			if (!task.isCompleted && task.id != "invite_friends") {
-				await this.post("./check-task", { taskId: task.id });
+				if (task.id == "select_exchange") {
+					await this.post("./select-exchange", { exchangeId: "bingx" });
+				} else {
+					await this.post("./check-task", { taskId: task.id });
+				}
 				console.log(`${this.TGUser.firstName}: task ${task.id} is completed`);
 			}
 		}
