@@ -34,6 +34,9 @@ export class Hamster {
 			if (data.dailyCombo) {
 				this.game.dailyCombo = data.dailyCombo;
 			}
+			if (data.tasks) {
+				this.game.tasks = data.tasks;
+			}
 			if (data.upgradesForBuy) {
 				this.game.upgrades = data.upgradesForBuy;
 			}
@@ -76,6 +79,15 @@ export class Hamster {
 			try {
 				await this.post("./claim-daily-cipher", { cipher });
 			} catch {}
+		}
+
+		//TASKS
+		//check-task endpoint
+		for (let task of this.game.tasks) {
+			if (!task.isCompleted) {
+				await this.post("./check-task", { taskId: task.id });
+				console.log(`${this.TGUser.firstName}: task ${task.id} is completed`);
+			}
 		}
 
 		//CLICK
