@@ -64,7 +64,7 @@ export class Hamster {
 
 	GetCardToBuy() {
 		return this.game.upgrades
-			.filter((v) => !v.condition && v.price < this.user.balanceCoins && v.profitPerHourDelta != 0 && !v.isExpired && !v.cooldownSeconds)
+			.filter((v) => v.price < this.user.balanceCoins && v.profitPerHourDelta != 0 && !v.isExpired && !v.cooldownSeconds)
 			.sort((a, b) => a.price / a.profitPerHourDelta - b.price / b.profitPerHourDelta)[0];
 	}
 
@@ -122,7 +122,7 @@ export class Hamster {
 
 	constructor(TOKEN) {
 		this.axios = axios.create({
-			baseURL: "https://api.hamsterkombat.io/clicker",
+			baseURL: "https://api.hamsterkombatgame.io/clicker/",
 			headers: { Authorization: TOKEN },
 		});
 		this.tick();
