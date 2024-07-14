@@ -65,7 +65,7 @@ export class Hamster {
 
 	GetCardToBuy() {
 		return this.game.upgrades
-			.filter((v) => v.available && v.price < this.user.balanceCoins && v.profitPerHourDelta != 0 && !v.isExpired && !v.cooldownSeconds)
+			.filter((v) => v.isAvailable && v.price < this.user.balanceCoins && v.profitPerHourDelta != 0 && !v.isExpired && !v.cooldownSeconds)
 			.sort((a, b) => a.price / a.profitPerHourDelta - b.price / b.profitPerHourDelta)[0];
 	}
 
