@@ -53,7 +53,7 @@ export class Hamster {
 		await this.post("../auth/me-telegram");
 
 		let out = "";
-		out += "-".repeat(10)+"\n";
+		out += "-".repeat(10) + "\n";
 		out += `name: ${this.TGUser.firstName}\n`;
 		out += `coins: ${parseInt(this.user.balanceCoins)}/${parseInt(this.game.upgrades.reduce((p, v) => p + v.price, 0) / this.game.upgrades.length)}\n`;
 		out += `EPH: ${this.user.earnPassivePerHour}\n`;
@@ -65,7 +65,7 @@ export class Hamster {
 
 	GetCardToBuy() {
 		return this.game.upgrades
-			.filter((v) => v.price < this.user.balanceCoins && v.profitPerHourDelta != 0 && !v.isExpired && !v.cooldownSeconds)
+			.filter((v) => v.available && v.price < this.user.balanceCoins && v.profitPerHourDelta != 0 && !v.isExpired && !v.cooldownSeconds)
 			.sort((a, b) => a.price / a.profitPerHourDelta - b.price / b.profitPerHourDelta)[0];
 	}
 
