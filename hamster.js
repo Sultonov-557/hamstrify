@@ -4,120 +4,103 @@ export class Hamster {
 	axios;
 	game = {};
 	user = {};
+	TGUser = {};
 
 	async post(url, data = {}) {
 		try {
-			const req = await this.axios.post(url, data);
-			data = req.data;
+			const { data: responseData } = await this.axios.post(url, data);
 
-			if (data.telegramUser) {
-				this.TGUser = data.telegramUser;
-			}
-			if (data.clickerUser) {
-				this.user = data.clickerUser;
-			}
-			if (data.upgradesForBuy) {
-				this.game.upgrades = data.upgradesForBuy;
-			}
-			if (data.clickerConfig) {
-				this.game.clickerConfig = data.clickerConfig;
-			}
-			if (data.dailyCipher) {
-				this.game.dailyCipher = data.dailyCipher;
-			}
-			if (data.feature) {
-				this.game.feature = data.feature;
-			}
-			if (data.sections) {
-				this.game.sections = data.sections;
-			}
-			if (data.dailyCombo) {
-				this.game.dailyCombo = data.dailyCombo;
-			}
-			if (data.tasks) {
-				this.game.tasks = data.tasks;
-			}
-			if (data.upgradesForBuy) {
-				this.game.upgrades = data.upgradesForBuy;
-			}
+			const updateFields = [
+				{ key: "telegramUser", target: "TGUser" },
+				{ key: "clickerUser", target: "user" },
+				{ key: "upgradesForBuy", target: "game.upgrades" },
+				{ key: "clickerConfig", target: "game.clickerConfig" },
+				{ key: "dailyCipher", target: "game.dailyCipher" },
+				{ key: "feature", target: "game.feature" },
+				{ key: "sections", target: "game.sections" },
+				{ key: "dailyCombo", target: "game.dailyCombo" },
+				{ key: "tasks", target: "game.tasks" },
+			];
+
+			updateFields.forEach(({ key, target }) => {
+				if (responseData[key]) {
+					if (target.includes(".")) {
+						const [obj, prop] = target.split(".");
+						if (!this[obj] || typeof this[obj] !== 'object') {
+							this[obj] = {};
+						}
+						this[obj][prop] = responseData[key];
+					} else {
+						this[target] = responseData[key];
+					}
+				}
+			});
 		} catch (e) {
-			console.log(e.data?.error_message || e.code || e, url);
+			console.error("Error in post request:", e.response?.data?.error_message || e.code || e, "URL:", url);
 		}
 	}
 
 	async update() {
-		await this.post("./sync");
-		await this.post("./config");
-		await this.post("./upgrades-for-buy");
-		await this.post("./list-tasks");
-		await this.post("../auth/me-telegram");
+		const endpoints = ["./sync", "./config", "./upgrades-for-buy", "./list-tasks", "../auth/me-telegram"];
+		await Promise.all(endpoints.map((endpoint) => this.post(endpoint)));
 
-		let out = "";
-		out += "-".repeat(10) + "\n";
-		out += `name: ${this.TGUser.firstName}\n`;
-		out += `coins: ${parseInt(this.user.balanceCoins)}/${parseInt(this.game.upgrades.reduce((p, v) => p + v.price, 0) / this.game.upgrades.length)}\n`;
-		out += `EPH: ${this.user.earnPassivePerHour}\n`;
-		out += `EPS: ${this.user.earnPassivePerSec}\n`;
-		out += `taps: ${this.user.availableTaps}/${this.user.maxTaps} - ${this.user.tapsRecoverPerSec}TPS+\n`;
-		out += "-".repeat(10);
-		console.log(out);
+		const formatNumber = (num) => parseInt(num).toLocaleString();
+		const avgUpgradePrice = formatNumber(this.game.upgrades.reduce((sum, v) => sum + v.price, 0) / this.game.upgrades.length);
+
+		console.log(
+			"-".repeat(10)+"\n",
+			`Name: ${this.TGUser.firstName}\n`,
+			`Coins: ${formatNumber(this.user.balanceCoins)}/${avgUpgradePrice}\n`,
+			`EPH: ${formatNumber(this.user.earnPassivePerHour)}\n`,
+			`EPS: ${this.user.earnPassivePerSec}\n`,
+			`Taps: ${this.user.availableTaps}/${this.user.maxTaps} - ${this.user.tapsRecoverPerSec}TPS+\n`,
+		);
 	}
 
 	GetCardToBuy() {
 		return this.game.upgrades
-			.filter((v) => v.isAvailable && v.price < this.user.balanceCoins && v.profitPerHourDelta != 0 && !v.isExpired && !v.cooldownSeconds)
+			.filter((v) => v.isAvailable && v.price < this.user.balanceCoins && v.profitPerHourDelta > 0 && !v.isExpired && !v.cooldownSeconds && v.condition?._type !== 'SubscribeTelegramChannel')
 			.sort((a, b) => a.price / a.profitPerHourDelta - b.price / b.profitPerHourDelta)[0];
 	}
 
 	async tick() {
-		//UPDATE
 		await this.update();
 
-		//CLAIM DAILY CIPHER
 		if (!this.game.dailyCipher.isClaimed) {
-			console.log(`${this.TGUser.firstName}: claiming cipher for`);
-			const cipher = Buffer.from(`${this.game.dailyCipher.cipher.slice(0, 3)}${this.game.dailyCipher.cipher.slice(4)}`, "base64").toString();
-			try {
-				await this.post("./claim-daily-cipher", { cipher });
-			} catch {}
+			console.log(`${this.TGUser.firstName}: claiming cipher`);
+			const cipher = atob(`${this.game.dailyCipher.cipher.slice(0, 3)}${this.game.dailyCipher.cipher.slice(4)}`);
+			await this.post("./claim-daily-cipher", { cipher }).catch(() => {});
 		}
 
-		//TASKS
-		//check-task endpoint
-		for (let task of this.game.tasks) {
-			if (!task.isCompleted && task.id != "invite_friends") {
-				if (task.id == "select_exchange") {
-					await this.post("./select-exchange", { exchangeId: "bingx" });
-				} else {
-					await this.post("./check-task", { taskId: task.id });
-				}
-				console.log(`${this.TGUser.firstName}: task ${task.id} is completed`);
+		for (const task of this.game.tasks) {
+			if (!task.isCompleted && task.id !== "invite_friends") {
+				const endpoint = task.id === "select_exchange" ? "./select-exchange" : "./check-task";
+				const payload = task.id === "select_exchange" ? { exchangeId: "bingx" } : { taskId: task.id };
+				await this.post(endpoint, payload);
+				console.log(`${this.TGUser.firstName}: task ${task.id} completed`);
 			}
 		}
 
-		//CLICK
-		const data = {
+		await this.post("./tap", {
 			count: this.user.availableTaps,
 			availableTaps: 0,
 			timestamp: Math.floor(Date.now() / 1000),
-		};
-		await this.post("./tap", data);
+		});
 
-		//CARDS
-		if (this.user.balanceCoins > this.game.upgrades.reduce((p, v) => p + v.price, 0) / this.game.upgrades.length) {
-			let cardToBuy = this.GetCardToBuy();
-			while (cardToBuy) {
+		const avgUpgradePrice = this.game.upgrades.reduce((sum, v) => sum + v.price, 0) / this.game.upgrades.length;
+		if (this.user.balanceCoins > avgUpgradePrice) {
+			let cardToBuy;
+			while ((cardToBuy = this.GetCardToBuy())) {
 				console.log(`${this.TGUser.firstName}: buying card ${cardToBuy.name}`);
 				await this.post("./buy-upgrade", { timestamp: Math.floor(Date.now() / 1000), upgradeId: cardToBuy.id });
-				cardToBuy = this.GetCardToBuy();
 			}
 		}
 
 		await this.update();
 
-		const sleepTime = parseInt((this.user.maxTaps - this.user.availableTaps) / this.user.tapsRecoverPerSec / 4);
-		console.log(`waiting for ${sleepTime} seconds`);
-		await sleep(sleepTime * 1000);
+		const sleepTime = Math.floor((this.user.maxTaps - this.user.availableTaps) / this.user.tapsRecoverPerSec / 4);
+		console.log(`Waiting for ${sleepTime} seconds`);
+		await new Promise((resolve) => setTimeout(resolve, sleepTime * 1000));
 		this.tick();
 	}
 
@@ -128,10 +111,4 @@ export class Hamster {
 		});
 		this.tick();
 	}
-}
-
-function sleep(ms) {
-	return new Promise((res) => {
-		setTimeout(res, ms);
-	});
 }
